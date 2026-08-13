@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MailTracker - Real-time Email Open & Click Tracking</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">📬</div>
+        <div class="brand-text">
+          <h1>MailTracker</h1>
+          <span class="brand-subtitle">Email Open & Click Tracking Dashboard</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="live-badge">
+          <span class="pulse-dot"></span>
+          <span>Server Active & Tracking</span>
+        </div>
+        <button class="btn btn-secondary" onclick="openGmailGuideModal()">
+          <span>Gmail Quick Setup</span>
+        </button>
+        <button class="btn btn-primary" onclick="openCreateModal()">
+          <span>+ Create Tracked Email</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <!-- Top Summary Stats -->
+    <section class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon purple">📧</div>
+        <div class="stat-info">
+          <span class="stat-label">Total Emails Tracked</span>
+          <span class="stat-value" id="stat-total">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">👁️</div>
+        <div class="stat-info">
+          <span class="stat-label">Total Opens Recorded</span>
+          <span class="stat-value" id="stat-opens">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">🎯</div>
+        <div class="stat-info">
+          <span class="stat-label">Open Rate</span>
+          <span class="stat-value" id="stat-rate">0%</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">🔗</div>
+        <div class="stat-info">
+          <span class="stat-label">Link Clicks Recorded</span>
+          <span class="stat-value" id="stat-clicks">0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Content Sections -->
+    <div class="grid-content">
+      <!-- Left Column: Email List -->
+      <div class="content-card">
+        <div class="card-header">
+          <h2>Tracked Emails</h2>
+          <div class="card-tools">
+            <input type="text" id="search-input" placeholder="Search recipient or subject..." oninput="filterEmails()">
+            <button class="btn btn-sm btn-secondary" onclick="loadEmails()">Refresh</button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="email-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Recipient</th>
+                <th>Subject</th>
+                <th>Opened</th>
+                <th>Last Opened</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="email-list-body">
+              <tr>
+                <td colspan="6" class="empty-state">Loading tracked emails...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right Column: How Email Tracking Works Guide -->
+      <div class="content-card guide-card">
+        <div class="card-header">
+          <h2>How Mail Tracking Works</h2>
+        </div>
+        <div class="guide-content">
+          <div class="info-alert" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3);">
+            <strong>Cloud Server Ready</strong>
+            <p style="margin-top: 4px; color: var(--text-muted);">Your MailTracker server is deployed and ready to record real-time opens globally.</p>
+          </div>
+
+          <div class="guide-step">
+            <div class="step-num">1</div>
+            <div class="step-details">
+              <h4>1x1 Invisible Pixel</h4>
+              <p>An HTML <code>&lt;img&gt;</code> tag pointing to your cloud server is embedded inside your email message.</p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="step-num">2</div>
+            <div class="step-details">
+              <h4>Recipient Opens Email</h4>
+              <p>The recipient's mail client (Gmail/Outlook) loads HTML and fetches the image from your cloud server.</p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="step-num">3</div>
+            <div class="step-details">
+              <h4>Server Logs Event & Serves Image</h4>
+              <p>Your server records timestamp, IP, and User-Agent, then returns a transparent PNG with anti-caching headers.</p>
+            </div>
+          </div>
+
+          <div class="info-alert">
+            <strong>Pro Tips & Caveats:</strong>
+            <ul>
+              <li><strong>Image Blocking:</strong> If recipient blocks remote images, open won't register until enabled.</li>
+              <li><strong>Gmail Proxy:</strong> Gmail proxies images via Google servers to protect recipient privacy.</li>
+              <li><strong>Anti-Caching:</strong> Headers force email clients to send new requests on every re-open.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Tracked Email Modal -->
+  <div class="modal-backdrop" id="create-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Create New Tracked Email</h3>
+        <button class="modal-close" onclick="closeCreateModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="create-email-form" onsubmit="handleCreateEmail(event)">
+          <div class="form-group">
+            <label for="recipient-input">Recipient Email (Optional)</label>
+            <input type="email" id="recipient-input" placeholder="e.g. client@example.com (Optional)">
+          </div>
+          <div class="form-group">
+            <label for="subject-input">Subject Line (Optional)</label>
+            <input type="text" id="subject-input" placeholder="e.g. Project Proposal & Next Steps (Optional)">
+          </div>
+          <div class="form-group">
+            <label for="body-input">Email Body (HTML or Text)</label>
+            <textarea id="body-input" rows="6" placeholder="Hi there,\n\nPlease check out our website: https://example.com.\n\nBest regards,"></textarea>
+          </div>
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" id="auto-link-tracking" checked>
+              Automatically convert links (e.g. https://...) into click-tracked links
+            </label>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Generate Tracking Email</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email Details & Audit Log Modal -->
+  <div class="modal-backdrop" id="details-modal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3>Email Details & Audit Timeline</h3>
+        <button class="modal-close" onclick="closeDetailsModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="details-modal-content">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Gmail Integration Guide Modal -->
+  <div class="modal-backdrop" id="gmail-guide-modal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3>How to Send Tracked Emails in Gmail</h3>
+        <button class="modal-close" onclick="closeGmailGuideModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; flex-direction: column; gap: 1rem; font-size: 0.9rem;">
+
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-md); padding: 1rem;">
+            <h4 style="color: var(--success); margin-bottom: 6px;">Server Status: Live Cloud Server</h4>
+            <p style="color: var(--text-muted);">Your server is public and actively tracking email opens globally.</p>
+          </div>
+
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 1rem;">
+            <h4 style="margin-bottom: 6px;">Step 1: Create & Copy Email</h4>
+            <ol style="padding-left: 20px; color: var(--text-muted); display: flex; flex-direction: column; gap: 6px;">
+              <li>Click <strong>"+ Create Tracked Email"</strong> in MailTracker.</li>
+              <li>Type your email text or HTML content.</li>
+              <li>Click <strong>"Copy for Gmail (Direct Paste)"</strong>.</li>
+            </ol>
+          </div>
+
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 1rem;">
+            <h4 style="margin-bottom: 6px;">Step 2: Paste directly into Gmail</h4>
+            <ol style="padding-left: 20px; color: var(--text-muted); display: flex; flex-direction: column; gap: 6px;">
+              <li>Open Gmail (<a href="https://mail.google.com" target="_blank" style="color: var(--accent-blue);">mail.google.com</a>) and click <strong>Compose</strong>.</li>
+              <li>Type the Subject and Recipient email address.</li>
+              <li>Click inside the main message body box and press <kbd style="background: #334155; padding: 2px 6px; border-radius: 4px;">Ctrl + V</kbd> (or <kbd style="background: #334155; padding: 2px 6px; border-radius: 4px;">Cmd + V</kbd>).</li>
+              <li>Your formatted message <em>including the invisible tracking pixel</em> will be pasted directly into Gmail!</li>
+              <li>Click <strong>Send</strong>!</li>
+            </ol>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
