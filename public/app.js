@@ -62,8 +62,8 @@ function renderEmailList(emails) {
   tbody.innerHTML = filtered.map(email => {
     const isOpened = email.openCount > 0;
     const statusBadge = isOpened 
-      ? `<span class="badge badge-success">✓ Opened (${email.openCount}x)</span>`
-      : `<span class="badge badge-warning">⏳ Unopened</span>`;
+      ? `<span class="badge badge-success">Opened (${email.openCount}x)</span>`
+      : `<span class="badge badge-warning">Unopened</span>`;
 
     const formattedLastOpen = email.lastOpenedAt ? formatDate(email.lastOpenedAt) : '—';
 
@@ -209,7 +209,6 @@ async function viewEmailDetails(id) {
       </div>
     `;
 
-    // Attach event listener safely to avoid inline HTML attribute string breaking
     const copyBtn = document.getElementById('gmail-copy-btn');
     if (copyBtn) {
       copyBtn.addEventListener('click', () => {
@@ -232,7 +231,7 @@ async function copyForGmail(htmlContent) {
       'text/plain': blobText
     });
     await navigator.clipboard.write([item]);
-    alert('✅ Copied to Clipboard!\n\n1. Open Gmail (mail.google.com)\n2. Click "Compose"\n3. Click in the message body & press Ctrl+V (or Cmd+V)\n\nYour message with the hidden tracking pixel is now in Gmail ready to send!');
+    alert('Copied to Clipboard!\n\n1. Open Gmail (mail.google.com)\n2. Click "Compose"\n3. Click in the message body & press Ctrl+V (or Cmd+V)\n\nYour message with the hidden tracking pixel is now in Gmail ready to send!');
   } catch (err) {
     copyHtmlFallback(htmlContent);
   }
@@ -254,7 +253,7 @@ function copyHtmlFallback(htmlContent) {
 
   document.execCommand('copy');
   document.body.removeChild(container);
-  alert('✅ Copied to Clipboard!\n\nOpen Gmail Compose and press Ctrl+V to paste!');
+  alert('Copied to Clipboard!\n\nOpen Gmail Compose and press Ctrl+V to paste!');
 }
 
 function renderAuditTimeline(email) {
@@ -295,7 +294,7 @@ function renderAuditTimeline(email) {
         if (ev.type === 'open') {
           return `
             <div class="timeline-item">
-              <span class="timeline-icon">👁️</span>
+              <span class="timeline-icon">[OPEN]</span>
               <div class="timeline-details">
                 <strong>Email Opened</strong>
                 <span class="timeline-time">${formatDate(ev.timestamp)}</span>
@@ -306,7 +305,7 @@ function renderAuditTimeline(email) {
         } else {
           return `
             <div class="timeline-item click-event">
-              <span class="timeline-icon">🔗</span>
+              <span class="timeline-icon">[CLICK]</span>
               <div class="timeline-details">
                 <strong>Link Clicked: <a href="${ev.targetUrl}" target="_blank" style="color: var(--accent-blue);">${ev.targetUrl}</a></strong>
                 <span class="timeline-time">${formatDate(ev.timestamp)}</span>

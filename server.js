@@ -8,25 +8,21 @@ const db = require('./db');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Security: Disable x-powered-by header to conceal express server fingerprint
 app.disable('x-powered-by');
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static assets from public folder
 const publicPath = path.join(__dirname, 'public');
 app.use(express.static(publicPath));
 
-// Explicit route for homepage to guarantee 200 OK on Vercel
 app.get('/', (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
-// 1x1 Transparent PNG Image Buffer (68 bytes)
 const TRANSPARENT_PNG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORUS5CYII=',
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
   'base64'
 );
 
@@ -38,15 +34,11 @@ function getClientIp(req) {
   return req.headers['x-real-ip'] || req.socket.remoteAddress || 'Unknown';
 }
 
-// ----------------------------------------------------
-// TRACKING PIXEL ENDPOINTS (Ultra-Fast Non-Blocking Response)
-// ----------------------------------------------------
 const pixelHandler = (req, res) => {
   const emailId = req.params.id.replace(/\.png$/i, '');
   const ip = getClientIp(req);
   const userAgent = req.headers['user-agent'] || 'Unknown';
 
-  // 1. Immediately return 1x1 PNG response to client (< 5ms)
   res.setHeader('Content-Type', 'image/png');
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0');
   res.setHeader('Surrogate-Control', 'no-store');
@@ -54,7 +46,6 @@ const pixelHandler = (req, res) => {
   res.setHeader('Expires', '0');
   res.status(200).send(TRANSPARENT_PNG);
 
-  // 2. Log open event asynchronously in background
   setImmediate(() => {
     db.recordOpen(emailId, { ip, userAgent }).catch(err => {
       console.error('Background recordOpen error:', err);
@@ -67,16 +58,12 @@ app.get('/track/:id', pixelHandler);
 app.get('/media/v1/:id.png', pixelHandler);
 app.get('/media/v1/:id', pixelHandler);
 
-// ----------------------------------------------------
-// LINK CLICK TRACKING ENDPOINT
-// ----------------------------------------------------
 app.get('/click/:id', (req, res) => {
   const emailId = req.params.id;
   const targetUrl = req.query.url;
   const ip = getClientIp(req);
   const userAgent = req.headers['user-agent'] || 'Unknown';
 
-  // Log click event asynchronously
   setImmediate(() => {
     db.recordClick(emailId, { ip, userAgent, targetUrl }).catch(err => {
       console.error('Background recordClick error:', err);
@@ -93,10 +80,6 @@ app.get('/click/:id', (req, res) => {
 
   res.status(400).send('Missing target URL');
 });
-
-// ----------------------------------------------------
-// REST API ENDPOINTS
-// ----------------------------------------------------
 
 app.get('/api/emails', async (req, res) => {
   try {
@@ -201,7 +184,6 @@ app.post('/api/emails/wrap-links', (req, res) => {
   res.json({ wrappedHtml });
 });
 
-// Production SMTP / Ethereal Email Sender Endpoint
 app.post('/api/emails/send-test', async (req, res) => {
   const { to, subject, html, smtpConfig } = req.body;
 
@@ -251,7 +233,6 @@ app.post('/api/emails/send-test', async (req, res) => {
       note: previewUrl ? 'Sent via Ethereal SMTP test sandbox.' : 'Sent successfully via Custom SMTP!'
     });
   } catch (err) {
-    // Log detailed error server-side ONLY; return sanitized message to client
     console.error('SMTP Error:', err.message);
     res.status(500).json({ error: 'Failed to send email via SMTP' });
   }
@@ -261,8 +242,6 @@ module.exports = app;
 
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`\n==================================================`);
-    console.log(`📬 Mail Tracker Service running at http://localhost:${PORT}`);
-    console.log(`==================================================\n`);
+    console.log(`Mail Tracker Service running at http://localhost:${PORT}`);
   });
 }

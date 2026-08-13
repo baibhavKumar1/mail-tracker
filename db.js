@@ -6,7 +6,6 @@ const IoRedis = require('ioredis');
 const DATA_DIR = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'emails.json');
 
-// Detect Redis environment variables
 const redisUrl = process.env.REDIS_URL || process.env.KV_URL;
 const upstashUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const upstashToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -24,13 +23,12 @@ if (redisUrl) {
       tls: redisUrl.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined
     });
 
-    // Suppress unhandled socket errors to prevent process termination
     redisClient.on('error', (err) => {
-      console.warn('⚠️ Redis Socket Warning:', err.message);
+      console.warn('Redis Socket Warning:', err.message);
     });
 
     clientType = 'ioredis';
-    console.log('⚡ Connected via REDIS_URL (ioredis)');
+    console.log('Connected via REDIS_URL (ioredis)');
   } catch (err) {
     console.error('ioredis connection error:', err);
   }
@@ -41,7 +39,7 @@ if (redisUrl) {
       token: upstashToken,
     });
     clientType = 'upstash';
-    console.log('⚡ Connected via Upstash REST API');
+    console.log('Connected via Upstash REST API');
   } catch (err) {
     console.error('Upstash REST connection error:', err);
   }
@@ -61,7 +59,6 @@ let memoryStore = [];
 async function readEmails() {
   if (clientType === 'ioredis' && redisClient) {
     try {
-      // Use efficient SCAN instead of blocking KEYS
       let keys = [];
       let stream = redisClient.scanStream({ match: 'email:*', count: 100 });
       for await (const resultKeys of stream) {
